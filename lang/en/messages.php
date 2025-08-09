@@ -23,6 +23,7 @@ return [
     'language' => 'Language',
     'clients' => 'Clients',
     'products' => 'Products',
+    'insurance' => 'Insurance',
     'invoices' => 'Invoices',
     'quotes' => 'Quotes',
     'general' => 'General',

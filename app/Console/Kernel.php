@@ -30,6 +30,9 @@ class Kernel extends ConsoleKernel
         $schedule->command(DueDateInvoiceReminderCommand::class)
             ->daily()
             ->appendOutputTo(storage_path('logs/commands.log'));
+
+                $schedule->command('insurance:send-reminders')->daily();
+
     }
 
     /**
@@ -41,4 +44,7 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+
+    
+
 }

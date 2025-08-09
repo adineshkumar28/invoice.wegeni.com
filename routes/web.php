@@ -597,3 +597,22 @@ include 'landing.php';
 // Add these routes to your existing web.php file
 
 
+// Route::resource('insurances', InsuranceController::class);
+// Route::get('insurances/client-details', [InsuranceController::class, 'getClientDetails'])->name('insurances.get-client-details');
+// Route::get('insurances/expiring-soon', [InsuranceController::class, 'getExpiringSoon'])->name('insurances.expiring-soon');
+// // Add this route in your admin middleware group
+// Route::get('insurances/get-client-details', [InsuranceController::class, 'getClientDetails'])->name('insurances.get-client-details');
+
+
+// Then add the resource routes
+// Make sure this route is inside your admin middleware group
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Insurance routes
+    Route::get('insurances/get-client-details', [App\Http\Controllers\InsuranceController::class, 'getClientDetails'])->name('insurances.get-client-details');
+    Route::resource('insurances', App\Http\Controllers\InsuranceController::class);
+    Route::get('insurances/expiring-soon', [App\Http\Controllers\InsuranceController::class, 'getExpiringSoon'])->name('insurances.expiring-soon');
+    Route::post('insurances/send-reminder', [App\Http\Controllers\InsuranceController::class, 'sendReminderEmail'])->name('insurances.send-reminder');
+    Route::get('insurances/{insurance}/reminder-status', [App\Http\Controllers\InsuranceController::class, 'getReminderStatus'])->name('insurances.reminder-status');
+    
+    // Email testing routes
+});
