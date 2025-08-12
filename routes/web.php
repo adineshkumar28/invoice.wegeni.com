@@ -616,3 +616,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Email testing routes
 });
+// Invoice Routes (modified to work with insurance)
+// Invoice Routes (modified to work with insurance)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::resource('invoices', InvoiceController::class);
+    Route::get('invoices/get-insurance/{insuranceId}', [InvoiceController::class, 'getInsurance'])->name('invoices.get-insurance');
+    Route::get('invoices/get-currency/{currencyId}', [InvoiceController::class, 'getInvoiceCurrency'])->name('invoices.get-currency');
+    Route::get('invoices/get-product/{productId}', [InvoiceController::class, 'getProduct'])->name('invoices.get-product');
+    Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'convertToPdf'])->name('invoices.pdf');
+    Route::patch('invoices/{invoice}/status', [InvoiceController::class, 'updateInvoiceStatus'])->name('invoices.update-status');
+    Route::get('invoices/export/excel', [InvoiceController::class, 'exportInvoicesExcel'])->name('invoices.excel');
+});

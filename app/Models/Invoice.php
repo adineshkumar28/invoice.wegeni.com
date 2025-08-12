@@ -292,14 +292,25 @@ class Invoice extends Model
     }
 
     public function setInvoiceDateAttribute($value)
-    {
-        $this->attributes['invoice_date'] = Carbon::createFromFormat(currentDateFormat(), $value)->translatedFormat('Y-m-d');
+{
+    try {
+        $this->attributes['invoice_date'] = Carbon::createFromFormat(currentDateFormat(), $value)->format('Y-m-d');
+    } catch (\Exception $e) {
+        // fallback parsing attempt
+        $this->attributes['invoice_date'] = Carbon::parse($value)->format('Y-m-d');
     }
+}
 
-    public function setDueDateAttribute($value)
-    {
-        $this->attributes['due_date'] = Carbon::createFromFormat(currentDateFormat(), $value)->translatedFormat('Y-m-d');
+public function setDueDateAttribute($value)
+{
+    try {
+        $this->attributes['due_date'] = Carbon::createFromFormat(currentDateFormat(), $value)->format('Y-m-d');
+    } catch (\Exception $e) {
+        // fallback parsing attempt
+        $this->attributes['due_date'] = Carbon::parse($value)->format('Y-m-d');
     }
+}
+
 
     public function invoiceTaxes(): BelongsToMany
     {

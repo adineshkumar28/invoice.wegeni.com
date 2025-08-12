@@ -2,37 +2,24 @@
 
 namespace App\Console;
 
-use App\Console\Commands\DueDateInvoiceReminderCommand;
-use App\Console\Commands\RecurringInvoiceCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
     /**
-     * The Artisan commands provided by your application.
-     *
-     * @var array
-     */
-    protected $commands = [
-        RecurringInvoiceCommand::class,
-        DueDateInvoiceReminderCommand::class,
-    ];
-
-    /**
      * Define the application's command schedule.
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command(RecurringInvoiceCommand::class)
-            ->daily()
-            ->appendOutputTo(storage_path('logs/commands.log'));
-        $schedule->command(DueDateInvoiceReminderCommand::class)
-            ->daily()
-            ->appendOutputTo(storage_path('logs/commands.log'));
+        // Send insurance expiry reminders daily at 9:00 AM
+        $schedule->command('insurance:send-expiry-reminders')
+                 ->dailyAt('09:00')
+                 ->withoutOverlapping()
+                 ->runInBackground();
 
-                $schedule->command('insurance:send-reminders')->daily();
-
+        // Existing insurance reminders (keep for backwards compatibility)
+        $schedule->command('insurance:send-reminders')->daily();
     }
 
     /**
@@ -44,7 +31,4 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
-
-    
-
 }
