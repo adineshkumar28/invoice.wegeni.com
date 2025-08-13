@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\InvoicePaymentReminderMail;
 use Exception;
 use Carbon\Carbon;
 use App\Models\Invoice;
@@ -349,4 +350,86 @@ class InvoiceController extends AppBaseController
     {
         return Excel::download(new AdminInvoicesExport, 'invoices-' . time() . '.xlsx');
     }
+
+        public function updateRecurringStatus(Invoice $invoice)
+    {
+        if ($invoice->tenant_id != Auth::user()->tenant_id) {
+            return $this->sendError(__('Seems, you are not allowed to access this record.'));
+        }
+
+        $recurringCycle = empty($invoice->recurring_cycle) ? 1 : $invoice->recurring_cycle;
+        $invoice->update([
+            'recurring_status' => !$invoice->recurring_status,
+            'recurring_cycle' => $recurringCycle,
+        ]);
+
+        return $this->sendSuccess(__('messages.flash.recurring_status_updated'));
+    }
+      public function sendInvoiceOnWhatsapp(Request $request): JsonResponse
+    {
+        $request->validate([
+            'invoice_id' => 'required',
+            'phone_number' => 'required',
+        ]);
+
+        $data = [];
+        $input = $request->all();
+        $invoice = Invoice::with(['client.user', 'payments'])->whereId($input['invoice_id'])->firstOrFail();
+        $data['appName'] = getAppName();
+        $data['invoice'] = $invoice;
+        $data['invoicePdfLink'] = route('public-view-invoice.pdf', ['invoice' => $invoice->invoice_id]);
+        $data['phoneNumber'] = '+' . $input['region_code'] . $input['phone_number'];
+
+        return $this->sendResponse($data, 'send invoice data retrieved successfully.');
+    }
+
+    public function invoicePaymentReminder($invoiceId): mixed
+    {
+        $invoice = Invoice::with(['client.user', 'payments'])->whereId($invoiceId)->whereTenantId(Auth::user()->tenant_id)->firstOrFail();
+        $paymentReminder = Mail::to($invoice->client->user->email)->send(new InvoicePaymentReminderMail($invoice));
+
+        return $this->sendResponse($paymentReminder, __('messages.flash.payment_reminder_mail_send'));
+    }
+
+    public function getPublicInvoicePdf($invoiceId): Response
+    {
+        $invoice = Invoice::whereInvoiceId($invoiceId)->firstOrFail();
+        $invoice->load('client.user', 'invoiceTemplate', 'invoiceItems.product', 'invoiceItems.invoiceItemTax');
+
+        $invoiceData = $this->invoiceRepository->getPdfData($invoice);
+        $invoiceTemplate = $this->invoiceRepository->getDefaultTemplate($invoice);
+        $pdf = PDF::loadView("invoices.invoice_template_pdf.$invoiceTemplate", $invoiceData);
+
+        return $pdf->stream('invoice.pdf');
+    }
+
+    public function showPublicInvoice($invoiceId): View|Factory|Application
+    {
+        $invoice = Invoice::with('client.user')->whereInvoiceId($invoiceId)->firstOrFail();
+        $invoiceData = $this->invoiceRepository->getInvoiceData($invoice);
+        $paymentTypes = Payment::PAYMENT_TYPE;
+        $paymentModes = getPaymentMode($invoice->client->user->tenant_id);
+        unset($paymentModes[Payment::CASH]);
+        $tenantId = $invoice->client->user->tenant_id;
+        $language = $invoice->client->user->language;
+        App::setLocale($language);
+
+        return view('invoices.public_view', compact('paymentTypes', 'paymentModes', 'tenantId'))->with($invoiceData);
+    }
+
+     public function exportInvoicesPdf()
+    {
+        $invoices = Invoice::with('client.user', 'payments')->orderBy('created_at', 'desc')->get();
+        if ($invoices->count() == 0) {
+            Flash::error(__('messages.no_records_found'));
+            return redirect(route('invoices.index'));
+        }
+        ini_set('max_execution_time', 36000000);
+        ini_set('memory_limit', '512M');
+        $data['invoices'] = Invoice::with('client.user', 'payments')->orderBy('created_at', 'desc')->get();
+        $invoicesPdf = PDF::loadView('invoices.export_invoices_pdf', $data);
+
+        return $invoicesPdf->download('Invoices.pdf');
+    }
+
 }
