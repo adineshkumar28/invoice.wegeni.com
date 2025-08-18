@@ -40,12 +40,21 @@
                                 <span>{{ __('messages.quotes') }}</span>
                             </a>
                         </a>
-                        <a class="py-0 fs-4 dropdown-item" href="{{ route('products.index') }}">
+                        {{-- <a class="py-0 fs-4 dropdown-item" href="{{ route('products.index') }}">
                             <a class="nav-link px-4" href="{{ route('products.index') }}">
                                 <span class="dropdown-icon me-4">
                                     <i class="fa-solid fas fa-cube pe-2"></i>
                                 </span>
                                 <span>{{ __('messages.products') }}</span>
+                            </a>
+                        </a> --}}
+
+<a class="py-0 fs-4 dropdown-item" href="{{ route('insurances.index') }}">
+                            <a class="nav-link px-4" href="{{ route('insurances.index') }}">
+                                <span class="dropdown-icon me-4">
+                                    <i class="fa-solid fas fa-percentage pe-2"></i>
+                                </span>
+                                <span>{{ __('messages.insurance') }}</span>
                             </a>
                         </a>
                         <a class="py-0 fs-4 dropdown-item" href="{{ route('taxes.index') }}">
