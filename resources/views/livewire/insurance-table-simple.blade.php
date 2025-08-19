@@ -57,6 +57,96 @@
         </div>
     </div>
 
+    <!-- Added advanced filters section -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <button type="button" 
+                    class="btn btn-outline-secondary btn-sm me-2" 
+                    wire:click="toggleAdvancedFilters">
+                <i class="fas fa-filter"></i>
+                {{ $showAdvancedFilters ? 'Hide' : 'Show' }} Advanced Filters
+            </button>
+            
+            @if($search || $statusFilter || $categoryFilter || $clientFilter || $policyNumberFilter || $startDateFrom || $startDateTo || $endDateFrom || $endDateTo || $premiumAmountFrom || $premiumAmountTo)
+                <button type="button" 
+                        class="btn btn-outline-danger btn-sm" 
+                        wire:click="clearAllFilters">
+                    <i class="fas fa-times"></i>
+                    Clear All Filters
+                </button>
+            @endif
+        </div>
+    </div>
+
+    @if($showAdvancedFilters)
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Advanced Filters</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Policy Number Filter -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Policy Number</label>
+                        <input type="text" 
+                               wire:model.live.debounce.300ms="policyNumberFilter" 
+                               class="form-control" 
+                               placeholder="Enter policy number...">
+                    </div>
+
+                    <!-- Start Date Range -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Start Date From</label>
+                        <input type="date" 
+                               wire:model.live="startDateFrom" 
+                               class="form-control">
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Start Date To</label>
+                        <input type="date" 
+                               wire:model.live="startDateTo" 
+                               class="form-control">
+                    </div>
+
+                    <!-- End Date Range -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">End Date From</label>
+                        <input type="date" 
+                               wire:model.live="endDateFrom" 
+                               class="form-control">
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">End Date To</label>
+                        <input type="date" 
+                               wire:model.live="endDateTo" 
+                               class="form-control">
+                    </div>
+
+                    <!-- Premium Amount Range -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Premium From</label>
+                        <input type="number" 
+                               wire:model.live.debounce.300ms="premiumAmountFrom" 
+                               class="form-control" 
+                               placeholder="Min amount..."
+                               step="0.01">
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Premium To</label>
+                        <input type="number" 
+                               wire:model.live.debounce.300ms="premiumAmountTo" 
+                               class="form-control" 
+                               placeholder="Max amount..."
+                               step="0.01">
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Loading indicator -->
     <div wire:loading class="text-center py-3">
         <div class="spinner-border text-primary" role="status">
@@ -70,7 +160,7 @@
             <thead class="table-dark">
                 <tr>
                     <th>
-                        <button class="btn btn-link text-white p-0 text-decoration-none" 
+                        <button class="btn btn-link text-black p-0 text-decoration-none" 
                                 wire:click="sortBy('name')">
                             Name
                             @if($sortField === 'name')
@@ -81,7 +171,7 @@
                         </button>
                     </th>
                     <th>
-                        <button class="btn btn-link text-white p-0 text-decoration-none" 
+                        <button class="btn btn-link text-black p-0 text-decoration-none" 
                                 wire:click="sortBy('policy_number')">
                             Policy Number
                             @if($sortField === 'policy_number')
@@ -92,7 +182,7 @@
                         </button>
                     </th>
                     <th>
-                        <button class="btn btn-link text-white p-0 text-decoration-none" 
+                        <button class="btn btn-link text-black p-0 text-decoration-none" 
                                 wire:click="sortBy('client_name')">
                             Client
                             @if($sortField === 'client_name')
@@ -103,7 +193,7 @@
                         </button>
                     </th>
                     <th>
-                        <button class="btn btn-link text-white p-0 text-decoration-none" 
+                        <button class="btn btn-link text-black p-0 text-decoration-none" 
                                 wire:click="sortBy('category_name')">
                             Category
                             @if($sortField === 'category_name')
@@ -114,7 +204,7 @@
                         </button>
                     </th>
                     <th>
-                        <button class="btn btn-link text-white p-0 text-decoration-none" 
+                        <button class="btn btn-link text-black p-0 text-decoration-none" 
                                 wire:click="sortBy('premium_amount')">
                             Premium Amount
                             @if($sortField === 'premium_amount')
@@ -125,7 +215,7 @@
                         </button>
                     </th>
                     <th>
-                        <button class="btn btn-link text-white p-0 text-decoration-none" 
+                        <button class="btn btn-link text-black p-0 text-decoration-none" 
                                 wire:click="sortBy('start_date')">
                             Start Date
                             @if($sortField === 'start_date')
@@ -136,7 +226,7 @@
                         </button>
                     </th>
                     <th>
-                        <button class="btn btn-link text-white p-0 text-decoration-none" 
+                        <button class="btn btn-link text-black p-0 text-decoration-none" 
                                 wire:click="sortBy('end_date')">
                             End Date
                             @if($sortField === 'end_date')
@@ -146,8 +236,8 @@
                             @endif
                         </button>
                     </th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th style="color: black">Status</th>
+                    <th style="color: black">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -256,6 +346,7 @@
         </div>
     @endif
 
+    @push('scripts')
     <script>
         function confirmDelete(insuranceId, insuranceName) {
             // Check if SweetAlert is available
@@ -344,5 +435,5 @@
             @endif
         });
     </script>
-    
+    @endpush
 </div>

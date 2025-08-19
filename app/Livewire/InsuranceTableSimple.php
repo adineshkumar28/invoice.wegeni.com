@@ -92,28 +92,56 @@ class InsuranceTableSimple extends Component
         }
     }
 
-    public function getInsurancesProperty()
+public function getInsurancesProperty()
 {
-    $query = Insurance::with(['client', 'category'])
-                     ->where('insurances.tenant_id', Auth::user()->tenant_id); // ✅ Fix applied
+    $query = Insurance::with(['client.user', 'category'])
+                     ->where('tenant_id', Auth::user()->tenant_id);
 
     // Apply search
     if ($this->search) {
-        $query->where(function($q) {
+        $query->where(function ($q) {
             $q->where('name', 'like', '%' . $this->search . '%')
               ->orWhere('policy_number', 'like', '%' . $this->search . '%')
-              ->orWhereHas('client.user', function($userQuery) {
-    $userQuery->where(function($q) {
-        $q->where('first_name', 'like', '%' . $this->search . '%')
-          ->orWhere('last_name', 'like', '%' . $this->search . '%')
-          ->orWhere('email', 'like', '%' . $this->search . '%');
-    });
-})
-
-              ->orWhereHas('category', function($categoryQuery) {
+              ->orWhereHas('client.user', function ($userQuery) {
+                  $userQuery->where(function ($q) {
+                      $q->where('first_name', 'like', '%' . $this->search . '%')
+                        ->orWhere('last_name', 'like', '%' . $this->search . '%')
+                        ->orWhere('email', 'like', '%' . $this->search . '%');
+                  });
+              })
+              ->orWhereHas('category', function ($categoryQuery) {
                   $categoryQuery->where('name', 'like', '%' . $this->search . '%');
               });
         });
+    }
+
+    // Apply filters
+    if ($this->policyNumberFilter) {
+        $query->where('policy_number', 'like', '%' . $this->policyNumberFilter . '%');
+    }
+
+    if ($this->startDateFrom) {
+        $query->where('start_date', '>=', $this->startDateFrom);
+    }
+
+    if ($this->startDateTo) {
+        $query->where('start_date', '<=', $this->startDateTo);
+    }
+
+    if ($this->endDateFrom) {
+        $query->where('end_date', '>=', $this->endDateFrom);
+    }
+
+    if ($this->endDateTo) {
+        $query->where('end_date', '<=', $this->endDateTo);
+    }
+
+    if ($this->premiumAmountFrom) {
+        $query->where('premium_amount', '>=', $this->premiumAmountFrom);
+    }
+
+    if ($this->premiumAmountTo) {
+        $query->where('premium_amount', '<=', $this->premiumAmountTo);
     }
 
     // Apply status filter
@@ -131,12 +159,11 @@ class InsuranceTableSimple extends Component
         }
     }
 
-    // Apply category filter
+    // Apply category and client filters
     if ($this->categoryFilter) {
         $query->where('category_id', $this->categoryFilter);
     }
 
-    // Apply client filter
     if ($this->clientFilter) {
         $query->where('client_id', $this->clientFilter);
     }
