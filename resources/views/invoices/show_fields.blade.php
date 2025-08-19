@@ -51,7 +51,7 @@
         <div class="tab-pane fade show active" id="overview" role="tabpanel">
             <div class="">
                 <div class="d-flex flex-column">
-                    <div class="card">
+                    <div class="card">  
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-xxl-9">
@@ -59,7 +59,7 @@
                                         <div class="col-lg-4 col-md-6">
                                             <div class="d-flex align-items-center mb-md-10 mb-5">
                                                 <div class="image image-circle image-small">
-                                                    <img src="{{ getPublicInvoiceAppURL($invoice->tenant_id) }}"
+            <img src="{{ asset(getLogoUrl()) }}" class="logo" alt="{{ getAppName() }}"
                                                         alt="logo" class="object-contain" style="width: 100px">
                                                 </div>
                                                 <h3 class="ps-7">{{ __('messages.invoice.invoice') }}

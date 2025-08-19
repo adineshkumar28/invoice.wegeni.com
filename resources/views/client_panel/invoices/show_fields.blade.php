@@ -36,8 +36,8 @@
                                     <div class="col-lg-4 col-md-6">
                                         <div class="d-flex align-items-center mb-md-10 mb-5">
                                             <div class="image image-circle image-small">
-                                                <img src="{{ getLogoUrl() }}" alt="logo" class="object-contain">
-                                            </div>
+      <img src="{{ asset(getLogoUrl()) }}" class="logo" alt="{{ getAppName() }}"
+                                                        alt="logo" class="object-contain" style="width: 100px">                                            </div>
                                             <h3 class="ps-7">{{ __('messages.invoice.invoice') }}
                                                 #{{ $invoice->invoice_id }}</h3>
                                         </div>

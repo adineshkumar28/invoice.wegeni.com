@@ -995,26 +995,32 @@ if (! function_exists('getCurrencySymbol')) {
     /**
      * @return mixed
      */
-    function getCurrencySymbol($tenantId = null)
-    {
-        /** @var Setting $currencySymbol */
-        static $currencySymbol;
-        if ($currencySymbol == null) {
-            if (Auth::check()) {
-                $currencyIcon = Currency::where('id', getSettingValue('current_currency'))->pluck('icon')->first();
+  function getCurrencySymbol($tenantId = null)
+{
+    /** @var Setting $currencySymbol */
+    static $currencySymbol;
+
+    if ($currencySymbol == null) {
+        if (Auth::check()) {
+            $currencyIcon = Currency::where('id', getSettingValue('current_currency'))->pluck('icon')->first();
+            $currencySymbol = $currencyIcon ?? '₹';
+        } else {
+            $setting = Setting::where('tenant_id', $tenantId)
+                              ->where('key', 'current_currency')
+                              ->first();
+
+            if ($setting && $setting->value) {
+                $currencyIcon = Currency::where('id', $setting->value)->pluck('icon')->first();
                 $currencySymbol = $currencyIcon ?? '₹';
             } else {
-                $adminCurrencySymbol = Setting::where('tenant_id', $tenantId)->where(
-                    'key',
-                    '=',
-                    'current_currency'
-                )->first()->value;
-                $currencySymbol = Currency::where('id', $adminCurrencySymbol)->pluck('icon')->first();
+                $currencySymbol = '₹'; // fallback default
             }
         }
-
-        return $currencySymbol;
     }
+
+    return $currencySymbol;
+}
+
 }
 
 if (! function_exists('getInvoiceCurrencySymbol')) {

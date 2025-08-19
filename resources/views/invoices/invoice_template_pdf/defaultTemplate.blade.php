@@ -25,7 +25,7 @@
         }
         
         .header {
-            border-bottom: 3px solid #007bff;
+            border-bottom: 3px solid #2a7a6f;
             padding-bottom: 20px;
             margin-bottom: 25px;
         }
@@ -51,7 +51,7 @@
         .company-name {
             font-size: 22px;
             font-weight: bold;
-            color: #007bff;
+            color: #2a7a6f;
             margin-bottom: 8px;
         }
         
@@ -89,7 +89,7 @@
         .section-header {
             font-size: 12px;
             font-weight: bold;
-            color: #007bff;
+            color: #2a7a6f;
             margin-bottom: 8px;
             text-transform: uppercase;
             border-bottom: 1px solid #ddd;
@@ -115,7 +115,7 @@
         }
         
         .items-table th {
-            background-color: #007bff;
+            background-color: #2a7a6f;
             color: white;
             padding: 10px 6px;
             text-align: left;
@@ -170,7 +170,7 @@
         }
         
         .summary-table .total-row {
-            background-color: #007bff;
+            background-color: #2a7a6f;
             color: white;
             font-weight: bold;
         }
@@ -184,7 +184,7 @@
         
         .notes-title {
             font-weight: bold;
-            color: #007bff;
+            color: #2a7a6f;
             margin-bottom: 8px;
         }
         
