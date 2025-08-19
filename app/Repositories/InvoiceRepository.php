@@ -501,12 +501,174 @@ class InvoiceRepository extends BaseRepository
 
     public function updateInvoice($invoiceId, $input): Invoice
     {
-        // Implementation for updating invoice
-        $invoice = Invoice::findOrFail($invoiceId);
-        
-        // Similar logic as saveInvoice but for updates
-        // Clean numeric values and handle the update process
-        
-        return $invoice;
+        try {
+            Log::info('=== REPOSITORY UPDATE START ===');
+            Log::info('Update input data received:', $input);
+            
+            // Set locale for consistent number handling
+            setlocale(LC_NUMERIC, 'C');
+            
+            $invoice = Invoice::findOrFail($invoiceId);
+            
+            // Parse JSON fields safely
+            $taxData = $this->parseJsonSafely($input['tax'] ?? '[]');
+            $taxIdData = $this->parseJsonSafely($input['tax_id'] ?? '[]');
+            
+            Log::info('Parsed tax data for update:', ['tax' => $taxData, 'tax_id' => $taxIdData]);
+            
+            // Handle invoice ID prefix/suffix only if invoice_id changed
+            $originalInvoiceId = $invoice->invoice_id;
+            if (isset($input['invoice_id']) && $input['invoice_id'] !== $originalInvoiceId) {
+                if (!empty(getSettingValue('invoice_no_prefix'))) {
+                    $input['invoice_id'] = getSettingValue('invoice_no_prefix') . '-' . $input['invoice_id'];
+                }
+                
+                if (!empty(getSettingValue('invoice_no_suffix'))) {
+                    $input['invoice_id'] .= '-' . getSettingValue('invoice_no_suffix');
+                }
+                
+                // Check if new invoice ID already exists (excluding current invoice)
+                $invoiceExist = Invoice::where('invoice_id', $input['invoice_id'])
+                                     ->where('id', '!=', $invoiceId)
+                                     ->exists();
+                if ($invoiceExist) {
+                    throw new UnprocessableEntityHttpException('Invoice ID already exists');
+                }
+            }
+            
+            // Validate recurring cycle
+            if (!empty($input['recurring_status']) && empty($input['recurring_cycle'])) {
+                throw new UnprocessableEntityHttpException('Please enter the value in Recurring Cycle.');
+            }
+            
+            // Prepare invoice items
+            $invoiceItemInputArray = Arr::only($input, [
+                'insurance_id', 'product_id', 'quantity', 'price'
+            ]);
+            
+            $invoiceItemInput = $this->prepareInputForInvoiceItem($invoiceItemInputArray, $taxData, $taxIdData);
+            
+            Log::info('Prepared invoice items for update:', $invoiceItemInput);
+            
+            // Validate totals
+            $total = 0;
+            foreach ($invoiceItemInput as $item) {
+                $quantity = (float) ($item['quantity'] ?? 1);
+                $price = (float) ($item['price'] ?? 0);
+                $total += $price * $quantity;
+            }
+            
+            if (!empty($input['discount']) && $total <= $input['discount']) {
+                throw new UnprocessableEntityHttpException('Discount amount should not be greater than sub total.');
+            }
+            
+            // Get client properly
+            $clientUser = Client::whereUserId($input['client_id'])
+                               ->withoutGlobalScope(new TenantScope())
+                               ->first();
+            
+            if (!$clientUser) {
+                throw new UnprocessableEntityHttpException('Client not found.');
+            }
+            
+            $invoiceData = [
+                'invoice_id' => $input['invoice_id'] ?? $invoice->invoice_id,
+                'invoice_date' => $input['invoice_date'],
+                'due_date' => $input['due_date'],
+                'discount_type' => $input['discount_type'],
+                'discount' => $input['discount'],
+                'amount' => $input['amount'],
+                'final_amount' => $input['final_amount'],
+                'note' => $input['note'] ?? null,
+                'term' => $input['term'] ?? null,
+                'template_id' => $input['template_id'],
+                'payment_qr_code_id' => $input['payment_qr_code_id'] ?? null,
+                'status' => $input['status'],
+                'client_id' => $clientUser->id,
+                'currency_id' => $input['currency_id'] ?? null,
+                'recurring_status' => $input['recurring_status'] ?? false,
+                'recurring_cycle' => $input['recurring_cycle'] ?? null,
+            ];
+            
+            Log::info('Updating invoice with data:', $invoiceData);
+            
+            $invoice->update($invoiceData);
+            
+            $inputInvoiceTaxes = $input['taxes'] ?? [];
+            if (count($inputInvoiceTaxes) > 0) {
+                $invoice->invoiceTaxes()->sync($inputInvoiceTaxes);
+            } else {
+                $invoice->invoiceTaxes()->detach();
+            }
+            
+            $existingItems = $invoice->invoiceItems()->with('invoiceItemTax')->get();
+            foreach ($existingItems as $existingItem) {
+                $existingItem->invoiceItemTax()->delete();
+            }
+            $invoice->invoiceItems()->delete();
+            
+            $insurances = Insurance::where('tenant_id', Auth::user()->tenant_id)
+                                  ->pluck('id')
+                                  ->toArray();
+            $products = Product::toBase()->pluck('id')->toArray();
+            
+            foreach ($invoiceItemInput as $key => $data) {
+                Log::info('Processing updated invoice item:', ['item' => $data, 'key' => $key]);
+                
+                // Handle insurance items
+                if (!empty($data['insurance_id'])) {
+                    if (in_array($data['insurance_id'], $insurances)) {
+                        $insurance = Insurance::find($data['insurance_id']);
+                        $data['insurance_name'] = null;
+                        $data['policy_number'] = $insurance->policy_number;
+                        $data['premium_amount'] = $insurance->premium_amount;
+                        $data['policy_start_date'] = $insurance->start_date;
+                        $data['policy_end_date'] = $insurance->end_date;
+                    } else {
+                        $data['insurance_name'] = $data['insurance_id'];
+                        $data['insurance_id'] = null;
+                    }
+                }
+                // Handle product items
+                elseif (!empty($data['product_id'])) {
+                    if (in_array($data['product_id'], $products)) {
+                        $data['product_name'] = null;
+                    } else {
+                        $data['product_name'] = $data['product_id'];
+                        $data['product_id'] = null;
+                    }
+                }
+                
+                $data['amount'] = $data['price'] * $data['quantity'];
+                $data['total'] = $data['amount'];
+                
+                $invoiceItem = new InvoiceItem($data);
+                $invoiceItems = $invoice->invoiceItems()->save($invoiceItem);
+                
+                // Handle taxes for this item
+                $itemTaxes = $data['taxes'] ?? [];
+                $itemTaxIds = $data['tax_ids'] ?? [];
+                
+                if (!empty($itemTaxes)) {
+                    foreach ($itemTaxes as $index => $tax) {
+                        InvoiceItemTax::create([
+                            'invoice_item_id' => $invoiceItems->id,
+                            'tax_id' => $itemTaxIds[$index] ?? 0,
+                            'tax' => $tax,
+                        ]);
+                    }
+                }
+            }
+            
+            Log::info('Invoice updated successfully:', ['invoice_id' => $invoice->id]);
+            
+            return $invoice->fresh();
+            
+        } catch (Exception $exception) {
+            Log::error('=== REPOSITORY UPDATE ERROR ===');
+            Log::error('Error message: ' . $exception->getMessage());
+            Log::error('Stack trace: ' . $exception->getTraceAsString());
+            throw new UnprocessableEntityHttpException($exception->getMessage());
+        }
     }
 }

@@ -91,7 +91,7 @@
                                         <table class="table table-striped box-shadow-none mt-4">
                                             <thead>
                                                 <tr>
-                                                    <th scope="col">{{ __('messages.product.product') }}</th>
+                                                    <th scope="col">{{ __('messages.insurance') }}</th>
                                                     <th scope="col">{{ __('messages.invoice.qty') }}</th>
                                                     <th scope="col">{{ __('messages.invoice.price') }}</th>
                                                     <th scope="col">{{ __('messages.invoice.tax') . ' (in %)' }}
@@ -103,7 +103,7 @@
                                                 @foreach ($invoice->invoiceItems as $index => $invoiceItem)
                                                     <tr>
                                                         <td class="py-4">
-                                                            {{ isset($invoiceItem->product->name) ? $invoiceItem->product->name : $invoiceItem->product_name ?? __('messages.common.n/a') }}
+                                                            {{ isset($invoiceItem->insurance->name) ? $invoiceItem->insurance->name : $invoiceItem->product_name ?? __('messages.common.n/a') }}
                                                         </td>
                                                         <td class="py-4">{{ $invoiceItem->quantity }}</td>
                                                         <td class="py-4 min-width-130px">
