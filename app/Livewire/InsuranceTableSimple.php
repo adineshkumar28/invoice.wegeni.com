@@ -74,18 +74,25 @@ class InsuranceTableSimple extends Component
                                  ->first();
 
             if ($insurance) {
+                $insuranceName = $insurance->name;
                 $insurance->delete();
-                session()->flash('success', 'Insurance deleted successfully!');
+                
+                session()->flash('success', "Insurance '{$insuranceName}' deleted successfully!");
                 $this->dispatch('insurance-deleted');
+                
+                if ($this->insurances->count() === 0 && $this->insurances->currentPage() > 1) {
+                    $this->resetPage();
+                }
             } else {
                 session()->flash('error', 'Insurance not found or access denied!');
             }
         } catch (\Exception $e) {
+            \Log::error('Error deleting insurance: ' . $e->getMessage());
             session()->flash('error', 'Error deleting insurance: ' . $e->getMessage());
         }
     }
 
-   public function getInsurancesProperty()
+    public function getInsurancesProperty()
 {
     $query = Insurance::with(['client', 'category'])
                      ->where('insurances.tenant_id', Auth::user()->tenant_id); // ✅ Fix applied
@@ -95,14 +102,14 @@ class InsuranceTableSimple extends Component
         $query->where(function($q) {
             $q->where('name', 'like', '%' . $this->search . '%')
               ->orWhere('policy_number', 'like', '%' . $this->search . '%')
-              ->orWhereHas('client', function($clientQuery) {
-                  $clientQuery->withoutGlobalScope(new TenantScope())
-                              ->where(function($nameQuery) {
-                                  $nameQuery->where('first_name', 'like', '%' . $this->search . '%')
-                                           ->orWhere('last_name', 'like', '%' . $this->search . '%')
-                                           ->orWhere('email', 'like', '%' . $this->search . '%');
-                              });
-              })
+              ->orWhereHas('client.user', function($userQuery) {
+    $userQuery->where(function($q) {
+        $q->where('first_name', 'like', '%' . $this->search . '%')
+          ->orWhere('last_name', 'like', '%' . $this->search . '%')
+          ->orWhere('email', 'like', '%' . $this->search . '%');
+    });
+})
+
               ->orWhereHas('category', function($categoryQuery) {
                   $categoryQuery->where('name', 'like', '%' . $this->search . '%');
               });
@@ -149,7 +156,6 @@ class InsuranceTableSimple extends Component
 
     return $query->paginate($this->perPage);
 }
-
 
     public function getCategoriesProperty()
     {

@@ -496,7 +496,7 @@ class InvoiceRepository extends BaseRepository
         }
         
         // Fallback to default template
-        return 'defaulttemplate';
+        return 'defaultTemplate';
     }
 
     public function updateInvoice($invoiceId, $input): Invoice

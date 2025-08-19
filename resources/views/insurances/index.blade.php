@@ -4,6 +4,14 @@
     {{ __('Insurances') }}
 @endsection
 
+@push('third_party_stylesheets')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css">
+@endpush
+
+@push('third_party_scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
+@endpush
+
 @section('content')
     <div class="container-fluid">
         <div class="d-flex flex-column">

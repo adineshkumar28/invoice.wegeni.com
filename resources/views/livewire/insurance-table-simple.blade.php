@@ -1,4 +1,3 @@
-
 <div>
     <!-- Search and Filters -->
     <div class="row mb-4">
@@ -71,7 +70,7 @@
             <thead class="table-dark">
                 <tr>
                     <th>
-                        <button class="btn btn-link p-0 text-decoration-none"  style="color: #333030"
+                        <button class="btn btn-link text-white p-0 text-decoration-none" 
                                 wire:click="sortBy('name')">
                             Name
                             @if($sortField === 'name')
@@ -82,7 +81,7 @@
                         </button>
                     </th>
                     <th>
-                        <button class="btn btn-link p-0 text-decoration-none "  style="color: #333030"
+                        <button class="btn btn-link text-white p-0 text-decoration-none" 
                                 wire:click="sortBy('policy_number')">
                             Policy Number
                             @if($sortField === 'policy_number')
@@ -93,7 +92,7 @@
                         </button>
                     </th>
                     <th>
-                        <button class="btn btn-link  p-0 text-decoration-none"  style="color: #333030"
+                        <button class="btn btn-link text-white p-0 text-decoration-none" 
                                 wire:click="sortBy('client_name')">
                             Client
                             @if($sortField === 'client_name')
@@ -104,7 +103,7 @@
                         </button>
                     </th>
                     <th>
-                        <button class="btn btn-link  p-0 text-decoration-none"  style="color: #333030"
+                        <button class="btn btn-link text-white p-0 text-decoration-none" 
                                 wire:click="sortBy('category_name')">
                             Category
                             @if($sortField === 'category_name')
@@ -115,7 +114,7 @@
                         </button>
                     </th>
                     <th>
-                        <button class="btn btn-link p-0 text-decoration-none"  style="color: #333030"
+                        <button class="btn btn-link text-white p-0 text-decoration-none" 
                                 wire:click="sortBy('premium_amount')">
                             Premium Amount
                             @if($sortField === 'premium_amount')
@@ -126,7 +125,7 @@
                         </button>
                     </th>
                     <th>
-                        <button class="btn btn-link  p-0 text-decoration-none"  style="color: #333030"
+                        <button class="btn btn-link text-white p-0 text-decoration-none" 
                                 wire:click="sortBy('start_date')">
                             Start Date
                             @if($sortField === 'start_date')
@@ -137,7 +136,7 @@
                         </button>
                     </th>
                     <th>
-                        <button class="btn btn-link  p-0 text-decoration-none"  style="color: #333030"
+                        <button class="btn btn-link text-white p-0 text-decoration-none" 
                                 wire:click="sortBy('end_date')">
                             End Date
                             @if($sortField === 'end_date')
@@ -147,8 +146,8 @@
                             @endif
                         </button>
                     </th>
-                    <th  style="color: #333030">Status</th>
-                    <th  style="color: #333030">Actions</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -257,9 +256,16 @@
         </div>
     @endif
 
-    @push('scripts')
     <script>
         function confirmDelete(insuranceId, insuranceName) {
+            // Check if SweetAlert is available
+            if (typeof Swal === 'undefined') {
+                if (confirm(`Are you sure you want to delete "${insuranceName}"? This action cannot be undone!`)) {
+                    Livewire.find('{{ $this->getId() }}').call('deleteInsurance', insuranceId);
+                }
+                return;
+            }
+
             Swal.fire({
                 title: 'Are you sure?',
                 text: `You are about to delete "${insuranceName}". This action cannot be undone!`,
@@ -268,26 +274,75 @@
                 confirmButtonColor: '#d33',
                 cancelButtonColor: '#3085d6',
                 confirmButtonText: 'Yes, delete it!',
-                cancelButtonText: 'Cancel'
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
-                    @this.call('deleteInsurance', insuranceId);
+                    // Show loading state
+                    Swal.fire({
+                        title: 'Deleting...',
+                        text: 'Please wait while we delete the insurance.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    // Call Livewire method
+                    Livewire.find('{{ $this->getId() }}').call('deleteInsurance', insuranceId);
                 }
             });
         }
 
-        // Listen for Livewire events
-        document.addEventListener('livewire:init', () => {
+        // Listen for Livewire events - Updated for Livewire v3
+        document.addEventListener('DOMContentLoaded', function() {
+            // Listen for insurance-deleted event
             Livewire.on('insurance-deleted', () => {
-                Swal.fire({
-                    title: 'Deleted!',
-                    text: 'Insurance has been deleted successfully.',
-                    icon: 'success',
-                    timer: 3000,
-                    showConfirmButton: false
-                });
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: 'Insurance has been deleted successfully.',
+                        icon: 'success',
+                        timer: 3000,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end'
+                    });
+                } else {
+                    alert('Insurance deleted successfully!');
+                }
             });
+
+            // Listen for flash messages
+            @if(session('success'))
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: '{{ session('success') }}',
+                        icon: 'success',
+                        timer: 3000,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end'
+                    });
+                }
+            @endif
+
+            @if(session('error'))
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: '{{ session('error') }}',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                } else {
+                    alert('{{ session('error') }}');
+                }
+            @endif
         });
     </script>
-    @endpush
+    
 </div>
