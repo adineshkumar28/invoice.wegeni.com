@@ -21,11 +21,17 @@ class InsuranceTableSimple extends Component
     public $statusFilter = '';
     public $categoryFilter = '';
     public $clientFilter = '';
+    public $policyNumberFilter = '';
+    public $startDateFrom = '';
+    public $startDateTo = '';
+    public $endDateFrom = '';
+    public $endDateTo = '';
+    public $premiumAmountFrom = '';
+    public $premiumAmountTo = '';
+    public $showAdvancedFilters = false;
     public $perPage = 10;
     public $sortField = 'created_at';
-    public $sortDirection = 'desc';
-
-    protected $paginationTheme = 'bootstrap';
+    public $sortDirection = 'desc';    protected $paginationTheme = 'bootstrap';
 
     protected $queryString = [
         'search' => ['except' => ''],
