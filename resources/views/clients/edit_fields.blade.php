@@ -1,6 +1,12 @@
 <div class="row gx-10 mb-5">
     <div class="col-lg-6">
         <div class="mb-5">
+            {{ Form::label('client_group_id', __('messages.client.client_group') . ':', ['class' => 'form-label mb-3']) }}
+            {{ Form::select('client_group_id', $clientGroups, $client->client_group_id ?? null, ['id' => 'clientGroupId', 'class' => 'form-select form-select-solid', 'placeholder' => __('messages.client.select_client_group'), 'data-control' => 'select2']) }}
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="mb-5">
             {{ Form::label('first_name', __('messages.client.first_name') . ':', ['class' => 'form-label required mb-3']) }}
             {{ Form::text('first_name', $client->user->first_name ?? null, ['class' => 'form-control form-control-solid user-first-name', 'placeholder' => __('messages.client.first_name'), 'required']) }}
         </div>

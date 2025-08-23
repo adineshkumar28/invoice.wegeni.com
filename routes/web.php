@@ -9,6 +9,7 @@ use App\Http\Controllers\CashController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\Client as Client;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ClientGroupController;
 use App\Http\Controllers\CookieWarningController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\DashboardController;
@@ -627,3 +628,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('invoices/{invoice}/status', [InvoiceController::class, 'updateInvoiceStatus'])->name('invoices.update-status');
     Route::get('invoices/export/excel', [InvoiceController::class, 'exportInvoicesExcel'])->name('invoices.excel');
 });
+Route::resource('admin/client-groups', ClientGroupController::class);

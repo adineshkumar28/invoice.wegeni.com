@@ -18,6 +18,7 @@ use Stancl\Tenancy\Database\TenantScope;
  *
  * @property int $id
  * @property int $user_id
+ * @property int|null $client_group_id
  * @property int $country_id
  * @property int $state_id
  * @property int $city_id
@@ -56,6 +57,8 @@ use Stancl\Tenancy\Database\TenantScope;
  * @method static Builder|Client whereVatNo($value)
  * @property string|null $company_name
  * @method static Builder|Client whereCompanyName($value)
+ * @method static Builder|Client whereClientGroupId($value)
+ * @property-read ClientGroup|null $clientGroup
  * @mixin Eloquent
  */
 class Client extends Model
@@ -74,6 +77,7 @@ class Client extends Model
         'city_id',
         'tenant_id',
         'user_id',
+        'client_group_id', // Added client_group_id to fillable
         'is_password_set',
         'vat_no',
         'company_name',
@@ -89,6 +93,7 @@ class Client extends Model
         'city_id' => 'integer',
         'tenant_id' => 'string',
         'user_id' => 'integer',
+        'client_group_id' => 'integer', // Added client_group_id cast
         'is_password_set' => 'boolean',
         'vat_no' => 'string',
         'company_name' => 'string',
@@ -108,6 +113,7 @@ class Client extends Model
         'postal_code' => 'required|string',
         'address' => 'nullable|string',
         'website' => 'nullable|url',
+        'client_group_id' => 'nullable|exists:client_groups,id', // Added validation for client_group_id
     ];
 
     public function user(): BelongsTo
@@ -128,6 +134,11 @@ class Client extends Model
     public function city(): BelongsTo
     {
         return $this->belongsTo(City::class, 'city_id', 'id');
+    }
+
+    public function clientGroup(): BelongsTo
+    {
+        return $this->belongsTo(ClientGroup::class, 'client_group_id', 'id');
     }
 
     public function invoices()

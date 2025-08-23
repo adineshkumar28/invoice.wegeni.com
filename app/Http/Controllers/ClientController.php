@@ -6,6 +6,7 @@ use App\Http\Requests\CreateClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\City;
 use App\Models\Client;
+use App\Models\ClientGroup; // Added ClientGroup import
 use App\Models\Country;
 use App\Models\Invoice;
 use App\Models\Role;
@@ -46,9 +47,10 @@ class ClientController extends AppBaseController
     public function create(): View|Factory|Application
     {
         $countries = Country::toBase()->pluck('name', 'id')->toArray();
+        $clientGroups = ClientGroup::pluck('name', 'id')->toArray(); // Added client groups
         $vatNoLabel = getVatNoLabel();
 
-        return view('clients.create', compact('countries','vatNoLabel'));
+        return view('clients.create', compact('countries', 'clientGroups', 'vatNoLabel')); // Added clientGroups to compact
     }
 
     public function store(CreateClientRequest $request): RedirectResponse
@@ -77,7 +79,7 @@ class ClientController extends AppBaseController
     public function show($clientId, Request $request): View|Factory|Application
     {
         $activeTab = $request->input('active', false);
-        $client = Client::with('invoices.payments')->whereId($clientId)->withoutGlobalScope(new TenantScope())->first();
+        $client = Client::with('invoices.payments', 'clientGroup')->whereId($clientId)->withoutGlobalScope(new TenantScope())->first(); // Added clientGroup to with
         $vatNoLabel = getVatNoLabel();
 
         return view('clients.show', compact('client', 'activeTab','vatNoLabel'));
@@ -87,11 +89,12 @@ class ClientController extends AppBaseController
     {
         $client = Client::withoutGlobalScope(new TenantScope())->whereId($clientId)->first();
         $countries = Country::toBase()->pluck('name', 'id')->toArray();
+        $clientGroups = ClientGroup::pluck('name', 'id')->toArray(); // Added client groups
         $clientState = State::toBase()->whereCountryId($client->country_id)->pluck('name', 'id')->toArray();
         $clientCities = City::toBase()->whereStateId($client->state_id)->pluck('name', 'id')->toArray();
         $vatNoLabel = getVatNoLabel();
 
-        return view('clients.edit', compact('client', 'countries', 'clientState', 'clientCities','vatNoLabel'));
+        return view('clients.edit', compact('client', 'countries', 'clientGroups', 'clientState', 'clientCities','vatNoLabel')); // Added clientGroups to compact
     }
 
     public function update($clientId, UpdateClientRequest $request): RedirectResponse
@@ -104,7 +107,7 @@ class ClientController extends AppBaseController
         return redirect()->route('clients.index');
     }
 
-    public function destroy($clientId,Request $request): JsonResponse
+    public function destroy($clientId, Request $request): JsonResponse
     {
         $check = $request->get('clientWithInvoices');
         $clientTenant = TenantWiseClient::find($clientId);

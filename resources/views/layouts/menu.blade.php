@@ -101,6 +101,14 @@
             <span class="aside-menu-title">{{ __('messages.clients') }}</span>
         </a>
     </li>
+<li class="nav-item {{ Request::is('admin/client-groups*') ? 'active' : '' }}">
+    <a class="nav-link d-flex align-items-center py-3" aria-current="page" href="{{ route('client-groups.index') }}">
+        <span class="menu-icon">
+            <i class="fas fa-users pe-3"></i>
+        </span>
+        <span class="aside-menu-title">{{ __('messages.client_groups') }}</span>
+    </a>
+</li>
 
     <li class="nav-item {{ Request::is('admin/categories*') ? 'active' : '' }}">
         <a class="nav-link d-flex align-items-center py-3" aria-current="page" href="{{ route('category.index') }}">
