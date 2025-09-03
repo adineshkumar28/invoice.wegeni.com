@@ -619,13 +619,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 // Invoice Routes (modified to work with insurance)
 // Invoice Routes (modified to work with insurance)
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::resource('invoices', InvoiceController::class);
+Route::resource('invoices', InvoiceController::class);
     Route::get('invoices/get-insurance/{insuranceId}', [InvoiceController::class, 'getInsurance'])->name('invoices.get-insurance');
     Route::get('invoices/get-currency/{currencyId}', [InvoiceController::class, 'getInvoiceCurrency'])->name('invoices.get-currency');
     Route::get('invoices/get-product/{productId}', [InvoiceController::class, 'getProduct'])->name('invoices.get-product');
     Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'convertToPdf'])->name('invoices.pdf');
     Route::patch('invoices/{invoice}/status', [InvoiceController::class, 'updateInvoiceStatus'])->name('invoices.update-status');
     Route::get('invoices/export/excel', [InvoiceController::class, 'exportInvoicesExcel'])->name('invoices.excel');
-});
+
+    Route::get('invoices/get-client-context/{userId}', [InvoiceController::class, 'getClientContext'])->name('invoices.get-client-context');
+    // Added group context endpoint
+    Route::get('invoices/get-group-context/{groupId}', [InvoiceController::class, 'getGroupContext'])->name('invoices.get-group-context');
+    // Added endpoint to fetch clients by client group for filtering client select
+    Route::get('invoices/get-clients-by-group/{groupId}', [InvoiceController::class, 'getClientsByGroup'])->name('invoices.get-clients-by-group');
 Route::resource('admin/client-groups', ClientGroupController::class);
+    Route::get('invoices/get-group-context/{groupId}', [InvoiceController::class, 'getGroupContext'])->name('invoices.get-group-context');
+ Route::get('invoices/get-group-context/{groupId}', [InvoiceController::class, 'getGroupContext'])->name('invoices.get-group-context');
+    // Added endpoint to fetch clients by client group for filtering client select
+    Route::get('invoices/get-clients-by-group/{groupId}', [InvoiceController::class, 'getClientsByGroup'])->name('invoices.get-clients-by-group');
+     Route::get('invoices/get-client-context/{userId}', [InvoiceController::class, 'getClientContext'])->name('invoices.get-client-context');

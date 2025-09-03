@@ -29,8 +29,12 @@ use App\Http\Requests\CreateInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
 use App\Models\Payment;
 use App\Mail\InvoiceCreateClientMail;
+use App\Models\Client;
+use App\Models\ClientGroup;
+use App\Models\TenantWiseClient;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Contracts\Foundation\Application;
+use Stancl\Tenancy\Database\TenantScope;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class InvoiceController extends AppBaseController
@@ -278,7 +282,7 @@ class InvoiceController extends AppBaseController
             $viewPath = "invoices.invoice_template_pdf.{$invoiceTemplate}";
             if (!view()->exists($viewPath)) {
                 Log::warning("Template view not found: {$viewPath}, using default");
-                $invoiceTemplate = 'defaulttemplate';
+                $invoiceTemplate = 'defaultTemplate';
                 $viewPath = "invoices.invoice_template_pdf.{$invoiceTemplate}";
             }
             
@@ -432,4 +436,190 @@ class InvoiceController extends AppBaseController
         return $invoicesPdf->download('Invoices.pdf');
     }
 
+    //  public function getGroupContext(int $groupId): JsonResponse
+    // {
+    //     try {
+    //         $tenantId = Auth::user()->tenant_id;
+
+    //         $group = ClientGroup::where('id', $groupId)
+    //             ->where('tenant_id', $tenantId)
+    //             ->first();
+
+    //         if (!$group) {
+    //             return $this->sendError('Client group not found.');
+    //         }
+
+    //         // All clients in this group
+    //         $clientIds = $group->clients()->pluck('id')->toArray();
+
+    //         // Fetch insurances for those clients within this tenant
+    //         $insurances = Insurance::where('tenant_id', $tenantId)
+    //             ->whereIn('client_id', $clientIds)
+    //             ->orderBy('name', 'asc')
+    //             ->get(['id','name','policy_number','premium_amount','start_date','end_date'])
+    //             ->map(function ($ins) {
+    //                 return [
+    //                     'id' => $ins->id,
+    //                     'name' => $ins->name,
+    //                     'policy_number' => $ins->policy_number,
+    //                     'premium_amount' => number_format((float)$ins->premium_amount, 2, '.', ''),
+    //                     'start_date' => optional($ins->start_date)->format('Y-m-d'),
+    //                     'end_date' => optional($ins->end_date)->format('Y-m-d'),
+    //                 ];
+    //             })->values();
+
+    //         return $this->sendResponse([
+    //             'group_name' => $group->name,
+    //             'group_count' => count($clientIds),
+    //             'insurances' => $insurances,
+    //         ], 'Group context retrieved successfully.');
+    //     } catch (Exception $e) {
+    //         Log::error('Error fetching group context for invoice', [
+    //             'group_id' => $groupId,
+    //             'error' => $e->getMessage(),
+    //         ]);
+    //         return $this->sendError('Error retrieving group context.');
+    //     }
+    // }
+ public function getGroupContext(int $groupId): JsonResponse
+    {
+        try {
+            $tenantId = Auth::user()->tenant_id;
+
+            $group = ClientGroup::where('id', $groupId)
+                ->where('tenant_id', $tenantId)
+                ->first();
+
+            if (!$group) {
+                return $this->sendError('Client group not found.');
+            }
+
+            // All clients in this group
+            $clientIds = $group->clients()->pluck('id')->toArray();
+
+            // Fetch insurances for those clients within this tenant
+            $insurances = Insurance::where('tenant_id', $tenantId)
+                ->whereIn('client_id', $clientIds)
+                ->orderBy('name', 'asc')
+                ->get(['id','name','policy_number','premium_amount','start_date','end_date'])
+                ->map(function ($ins) {
+                    return [
+                        'id' => $ins->id,
+                        'name' => $ins->name,
+                        'policy_number' => $ins->policy_number,
+                        'premium_amount' => number_format((float)$ins->premium_amount, 2, '.', ''),
+                        'start_date' => optional($ins->start_date)->format('Y-m-d'),
+                        'end_date' => optional($ins->end_date)->format('Y-m-d'),
+                    ];
+                })->values();
+
+            return $this->sendResponse([
+                'group_name' => $group->name,
+                'group_count' => count($clientIds),
+                'insurances' => $insurances,
+            ], 'Group context retrieved successfully.');
+        } catch (Exception $e) {
+            Log::error('Error fetching group context for invoice', [
+                'group_id' => $groupId,
+                'error' => $e->getMessage(),
+            ]);
+            return $this->sendError('Error retrieving group context.');
+        }
+    }
+    public function getClientContext(int $userId): JsonResponse
+    {
+        try {
+            $tenantId = Auth::user()->tenant_id;
+
+            // Find client by user_id and validate tenant association
+            $client = Client::whereUserId($userId)
+                ->withoutGlobalScope(new TenantScope())
+                ->first();
+
+            if (!$client) {
+                return $this->sendError('Client not found.');
+            }
+
+            $belongsToTenant = TenantWiseClient::where('client_id', $client->id)
+                ->where('tenant_id', $tenantId)
+                ->exists();
+
+            if (!$belongsToTenant) {
+                return $this->sendError('Client not found in your tenant.');
+            }
+
+            // Get client's group + count
+            $group = $client->clientGroup;
+            $groupName = $group?->name;
+            $groupCount = $group ? $group->clients()->count() : 0;
+
+            // Fetch insurances belonging to this client within this tenant
+            $clientInsurances = Insurance::where('tenant_id', $tenantId)
+                ->where('client_id', $client->id)
+                ->orderBy('name', 'asc')
+                ->get([
+                    'id', 'name', 'policy_number', 'premium_amount', 'start_date', 'end_date'
+                ])
+                ->map(function ($ins) {
+                    return [
+                        'id' => $ins->id,
+                        'name' => $ins->name,
+                        'policy_number' => $ins->policy_number,
+                        'premium_amount' => number_format((float)$ins->premium_amount, 2, '.', ''),
+                        'start_date' => optional($ins->start_date)->format('Y-m-d'),
+                        'end_date' => optional($ins->end_date)->format('Y-m-d'),
+                    ];
+                })
+                ->values();
+
+            return $this->sendResponse([
+                'client_id' => $client->id,
+                'group_name' => $groupName,
+                'group_count' => $groupCount,
+                'insurances' => $clientInsurances,
+            ], 'Client context retrieved successfully.');
+        } catch (Exception $e) {
+            Log::error('Error fetching client context for invoice', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+            ]);
+            return $this->sendError('Error retrieving client context.');
+        }
+    }
+   public function getClientsByGroup(int $groupId): JsonResponse
+    {
+        try {
+            $tenantId = Auth::user()->tenant_id;
+
+            $group = ClientGroup::where('id', $groupId)
+                ->where('tenant_id', $tenantId)
+                ->first();
+
+            if (!$group) {
+                return $this->sendError('Client group not found.');
+            }
+
+            // Get clients in this group with their associated user records (for names)
+            $clients = $group->clients()->with(['user' => function ($q) {
+                $q->select('id', 'first_name', 'last_name');
+            }])->get(['id','user_id']);
+
+            // Return list keyed by user_id because invoice form uses user id for client selection
+            $result = $clients->map(function ($client) {
+                $fullName = trim(($client->user->first_name ?? '') . ' ' . ($client->user->last_name ?? ''));
+                return [
+                    'user_id' => $client->user_id,
+                    'name' => $fullName ?: 'Client #'.$client->id,
+                ];
+            })->values();
+
+            return $this->sendResponse(['clients' => $result], 'Clients fetched successfully.');
+        } catch (Exception $e) {
+            Log::error('Error fetching clients by group', [
+                'group_id' => $groupId,
+                'error' => $e->getMessage(),
+            ]);
+            return $this->sendError('Error retrieving clients by group.');
+        }
+    }
 }

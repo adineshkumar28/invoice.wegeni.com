@@ -16,7 +16,8 @@ class CreateInvoiceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'client_id' => 'required|integer',
+            'client_group_id' => 'nullable|integer|exists:client_groups,id',
+            'client_id' => 'nullable|integer',
             'invoice_date' => 'required|date',
             'due_date' => 'required|date|after_or_equal:invoice_date',
             'invoice_id' => 'required|string|max:255',
@@ -45,7 +46,7 @@ class CreateInvoiceRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'client_id.required' => 'Please select a client.',
+            'client_group_id.required' => 'Please select a client group.',
             'invoice_date.required' => 'Invoice date is required.',
             'due_date.required' => 'Due date is required.',
             'due_date.after_or_equal' => 'Due date must be after or equal to invoice date.',

@@ -100,35 +100,48 @@ class ClientRepository extends BaseRepository
         }
     }
 
-    public function updateClient(array $input, Client $client): bool
-    {
-        try {
-            DB::beginTransaction();
-            $user = User::withoutGlobalScope(new TenantScope())->whereId($client->user_id)->first();
-            $userInputs = Arr::only($input, ['first_name', 'last_name', 'email', 'contact', 'region_code']);
+   public function updateClient(array $input, Client $client): bool
+{
+    try {
+        DB::beginTransaction();
 
-            if (! empty($input['password'])) {
-                $userInputs['password'] = Hash::make($input['password']);
-            }
+        $user = User::withoutGlobalScope(new TenantScope())->whereId($client->user_id)->first();
+        $userInputs = Arr::only($input, ['first_name', 'last_name', 'email', 'contact', 'region_code']);
 
-            $user->update($userInputs);
-            $clientInputs = Arr::only($input,
-                ['website', 'postal_code', 'country_id', 'state_id', 'city_id', 'address', 'note','vat_no','company_name']);
-            $client->update($clientInputs);
-
-            if (isset($input['profile']) && ! empty($input['profile'])) {
-                $user->clearMediaCollection(User::PROFILE);
-                $user->media()->delete();
-                $user->addMedia($input['profile'])->toMediaCollection(User::PROFILE,
-                    config('app.media_disc'));
-            }
-
-            DB::commit();
-
-            return true;
-        } catch (Exception $e) {
-            DB::rollBack();
-            throw new UnprocessableEntityHttpException($e->getMessage());
+        if (!empty($input['password'])) {
+            $userInputs['password'] = Hash::make($input['password']);
         }
+
+        $user->update($userInputs);
+
+        // client_group_id சேர்த்தோம்
+        $clientInputs = Arr::only($input, [
+            'website',
+            'postal_code',
+            'country_id',
+            'state_id',
+            'city_id',
+            'address',
+            'note',
+            'vat_no',
+            'company_name',
+            'client_group_id', // 👈 இதை சேர்க்கணும்
+        ]);
+
+        $client->update($clientInputs);
+
+        if (isset($input['profile']) && !empty($input['profile'])) {
+            $user->clearMediaCollection(User::PROFILE);
+            $user->media()->delete();
+            $user->addMedia($input['profile'])->toMediaCollection(User::PROFILE, config('app.media_disc'));
+        }
+
+        DB::commit();
+        return true;
+    } catch (Exception $e) {
+        DB::rollBack();
+        throw new UnprocessableEntityHttpException($e->getMessage());
     }
+}
+
 }

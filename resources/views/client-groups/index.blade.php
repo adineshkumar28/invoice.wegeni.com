@@ -25,3 +25,34 @@
         </div>
     </div>
 @endsection
+
+<script>
+    $(document).on('click', '.client-group-delete-btn', function (e) {
+    e.preventDefault();
+    let id = $(this).data('id');
+    let url = $(this).data('url');
+
+    if (confirm("Are you sure you want to delete this client group?")) {
+        $.ajax({
+            url: url,
+            type: "DELETE",
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+            },
+            success: function (response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    Livewire.dispatch('refreshDatatable'); // ✅ refresh table
+                } else {
+                    toastr.error("Delete failed");
+                }
+            },
+            error: function () {
+                toastr.error("Something went wrong");
+            }
+        });
+    }
+});
+
+</script>
+

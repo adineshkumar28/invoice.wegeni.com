@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateInsuranceRequest;
 use App\Models\Insurance;
 use App\Models\Client;
 use App\Models\Category;
+use App\Models\ClientGroup;
 use App\Models\User;
 use App\Models\TenantWiseClient;
 use App\Repositories\InsuranceRepository;
@@ -57,17 +58,19 @@ class InsuranceController extends AppBaseController
                     return [];
                 });
 
+            $clientGroups = ClientGroup::where('tenant_id', $tenantID)
+                                     ->pluck('name', 'id');
+
             $categories = Category::where('tenant_id', Auth::user()->tenant_id)
                                 ->pluck('name', 'id');
 
-            return view('insurances.create', compact('clients', 'categories'));
+            return view('insurances.create', compact('clients', 'clientGroups', 'categories'));
         } catch (\Exception $e) {
             Log::error('Error in insurance create: ' . $e->getMessage());
             Flash::error('Error loading create page: ' . $e->getMessage());
             return redirect()->route('insurances.index');
         }
     }
-
     public function store(CreateInsuranceRequest $request): RedirectResponse
     {
         $input = $request->all();
@@ -122,10 +125,13 @@ class InsuranceController extends AppBaseController
                 return [];
             });
 
+        $clientGroups = ClientGroup::where('tenant_id', $tenantID)
+                                 ->pluck('name', 'id');
+
         $categories = Category::where('tenant_id', Auth::user()->tenant_id)
                             ->pluck('name', 'id');
 
-        return view('insurances.edit', compact('insurance', 'clients', 'categories'));
+        return view('insurances.edit', compact('insurance', 'clients', 'clientGroups', 'categories'));
     }
 
     public function update(UpdateInsuranceRequest $request, Insurance $insurance): RedirectResponse
@@ -255,7 +261,7 @@ class InsuranceController extends AppBaseController
         }
     }
 
-    public function getClientDetails(Request $request): JsonResponse
+     public function getClientDetails(Request $request): JsonResponse
     {
         try {
             Log::info('=== CLIENT DETAILS REQUEST START ===');
@@ -329,6 +335,15 @@ class InsuranceController extends AppBaseController
 
             Log::info('User found: ', $user->toArray());
 
+            // Include client group name and members count in response
+            $groupName = null;
+            $groupCount = 0;
+            if ($client->clientGroup) {
+                $groupName = $client->clientGroup->name;
+                // Count members in this group (tenant-safe)
+                $groupCount = $client->clientGroup->clients()->count();
+            }
+
             // Prepare client data with correct names
             $clientData = [
                 'id' => $client->id,
@@ -342,6 +357,8 @@ class InsuranceController extends AppBaseController
                 'website' => $client->website ?? '',
                 'postal_code' => $client->postal_code ?? '',
                 'vat_no' => $client->vat_no ?? '',
+                'client_group_name' => $groupName,
+                'client_group_count' => $groupCount,
             ];
 
             Log::info('Returning client data: ', $clientData);
@@ -364,7 +381,6 @@ class InsuranceController extends AppBaseController
             ], 500);
         }
     }
-
     public function getExpiringSoon(): JsonResponse
     {
         $expiring = Insurance::with(['client', 'category'])

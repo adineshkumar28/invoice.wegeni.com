@@ -16,6 +16,7 @@ class UpdateInvoiceRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'client_group_id' => 'nullable|integer|exists:client_groups,id',
             'client_id' => 'required|integer',
             'invoice_date' => 'required|date',
             'due_date' => 'required|date|after_or_equal:invoice_date',

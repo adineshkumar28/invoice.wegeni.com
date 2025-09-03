@@ -280,6 +280,13 @@
                         @if($invoice->client->company_name)
                             <p><em>{{ $invoice->client->company_name }}</em></p>
                         @endif
+                        @if($invoice->client->clientGroup)
+                            @php
+                                $__group = $invoice->client->clientGroup;
+                                $__count = $__group->clients ? $__group->clients->count() : $__group->clients()->count();
+                            @endphp
+                            <p><strong>Group:</strong> {{ $__group->name }} <span class="text-muted">({{ $__count }} members)</span></p>
+                        @endif
                     @else
                         <p>Client information not available</p>
                     @endif
@@ -401,16 +408,14 @@
                         <td><strong>TOTAL:</strong></td>
                         <td class="text-right"><strong>{{ getCurrencyAmount($invoice->final_amount, true) }}</strong></td>
                     </tr>
-                    @if(isset($paid) && $paid > 0)
-                        <tr>
-                            <td><strong>Paid:</strong></td>
-                            <td class="text-right">{{ getCurrencyAmount($paid, true) }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Due:</strong></td>
-                            <td class="text-right">{{ getCurrencyAmount($dueAmount, true) }}</td>
-                        </tr>
-                    @endif
+                    <tr>
+                        <td><strong>Paid:</strong></td>
+                        <td class="text-right">{{ getCurrencyAmount($paid ?? 0, true) }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Due:</strong></td>
+                        <td class="text-right">{{ getCurrencyAmount($dueAmount ?? ($invoice->final_amount - ($paid ?? 0)), true) }}</td>
+                    </tr>
                 </table>
             </div>
         </div>

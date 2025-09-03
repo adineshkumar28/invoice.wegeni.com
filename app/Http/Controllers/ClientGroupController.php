@@ -75,17 +75,27 @@ class ClientGroupController extends AppBaseController
         return redirect()->route('client-groups.index');
     }
 
-    public function destroy($clientGroupId): JsonResponse
-    {
-        $clientGroup = ClientGroup::findOrFail($clientGroupId);
-        
-        // Check if group has clients
-        if ($clientGroup->clients()->count() > 0) {
+  public function destroy($clientGroupId)
+{
+    $clientGroup = ClientGroup::findOrFail($clientGroupId);
+
+    if ($clientGroup->clients()->count() > 0) {
+        if (request()->ajax()) {
             return $this->sendError(__('messages.flash.client_group_has_clients'));
         }
-        
-        $clientGroup->delete();
-        
+
+        return redirect()->back()->with('error', __('messages.flash.client_group_has_clients'));
+    }
+
+    $clientGroup->delete();
+
+    if (request()->ajax()) {
         return $this->sendSuccess(__('messages.flash.client_group_deleted'));
     }
+
+    return redirect()->route('client-groups.index')
+        ->with('success', __('messages.flash.client_group_deleted'));
+}
+
+
 }

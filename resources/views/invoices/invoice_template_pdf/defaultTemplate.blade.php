@@ -25,7 +25,7 @@
         }
         
         .header {
-            border-bottom: 3px solid #2a7a6f;
+            border-bottom: 3px solid #007bff;
             padding-bottom: 20px;
             margin-bottom: 25px;
         }
@@ -51,7 +51,7 @@
         .company-name {
             font-size: 22px;
             font-weight: bold;
-            color: #2a7a6f;
+            color: #007bff;
             margin-bottom: 8px;
         }
         
@@ -89,7 +89,7 @@
         .section-header {
             font-size: 12px;
             font-weight: bold;
-            color: #2a7a6f;
+            color: #007bff;
             margin-bottom: 8px;
             text-transform: uppercase;
             border-bottom: 1px solid #ddd;
@@ -115,7 +115,7 @@
         }
         
         .items-table th {
-            background-color: #2a7a6f;
+            background-color: #007bff;
             color: white;
             padding: 10px 6px;
             text-align: left;
@@ -170,7 +170,7 @@
         }
         
         .summary-table .total-row {
-            background-color: #2a7a6f;
+            background-color: #007bff;
             color: white;
             font-weight: bold;
         }
@@ -184,7 +184,7 @@
         
         .notes-title {
             font-weight: bold;
-            color: #2a7a6f;
+            color: #007bff;
             margin-bottom: 8px;
         }
         
@@ -228,6 +228,13 @@
                     @endif
                     @if($invoice->client->address)
                         <div>{{ $invoice->client->address }}</div>
+                    @endif
+                    @if($invoice->client->clientGroup)
+                        @php
+                            $__group = $invoice->client->clientGroup;
+                            $__count = $__group->clients ? $__group->clients->count() : $__group->clients()->count();
+                        @endphp
+                        <div>Group: <strong>{{ $__group->name }}</strong> ({{ $__count }})</div>
                     @endif
                 @else
                     <div>Client information not available</div>
@@ -343,6 +350,18 @@
                         <td><strong>TOTAL:</strong></td>
                         <td class="text-right"><strong>{{ getCurrencyAmount($invoice->final_amount, true) }}</strong></td>
                     </tr>
+                    @if(isset($paid))
+                        <tr>
+                            <td>Paid:</td>
+                            <td class="text-right">{{ getCurrencyAmount($paid, true) }}</td>
+                        </tr>
+                    @endif
+                    @if(isset($dueAmount))
+                        <tr>
+                            <td>Due:</td>
+                            <td class="text-right">{{ getCurrencyAmount($dueAmount, true) }}</td>
+                        </tr>
+                    @endif
                 </table>
             </div>
         </div>

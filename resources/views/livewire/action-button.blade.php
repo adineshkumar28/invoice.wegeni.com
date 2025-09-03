@@ -13,10 +13,17 @@
             <i class="fa-solid fa-pen-to-square"></i>
         </a>
     @endif
-    <a href="javascript:void(0)" data-id="{{ $value['data-id'] }}" title="{{ __('messages.common.delete') }}"
-       class="{{$value['data-delete-id']}} btn px-2 text-danger fs-3 py-2"
-       data-bs-toggle="tooltip" data-turbolinks="false">
-        <i class="fa-solid fa-trash"></i>
-
-    </a>
+     @if(isset($value['delete-route']))
+        <form action="{{ $value['delete-route'] }}" method="POST" class="d-inline-block delete-form">
+            @csrf
+            @method('DELETE')
+            <button type="submit"
+                class="btn px-2 text-danger fs-3 py-2"
+                title="{{ __('messages.common.delete') }}"
+                data-bs-toggle="tooltip"
+                onclick="return confirm('Are you sure you want to delete this?')">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </form>
+    @endif
 </div>

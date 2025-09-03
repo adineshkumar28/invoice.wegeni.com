@@ -346,7 +346,6 @@
         </div>
     @endif
 
-    @push('scripts')
     <script>
         function confirmDelete(insuranceId, insuranceName) {
             // Check if SweetAlert is available
@@ -435,5 +434,4 @@
             @endif
         });
     </script>
-    @endpush
 </div>

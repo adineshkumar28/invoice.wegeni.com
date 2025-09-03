@@ -316,4 +316,24 @@ public function setDueDateAttribute($value)
     {
         return $this->belongsToMany(Tax::class, 'invoice_taxes');
     }
+
+//     public function payments()
+// {
+//     return $this->hasMany(\App\Models\InvoicePayment::class);
+// }
+
+public function getPaidAmountAttribute()
+{
+    if ($this->relationLoaded('payments')) {
+        return $this->payments->sum('amount');
+    }
+    return $this->payments()->sum('amount');
+}
+
+public function getBalanceAttribute()
+{
+    $total = $this->total ?? 0;
+    return max($total - ($this->paid_amount ?? 0), 0);
+}
+
 }

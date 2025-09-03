@@ -53,28 +53,28 @@ class ClientController extends AppBaseController
         return view('clients.create', compact('countries', 'clientGroups', 'vatNoLabel')); // Added clientGroups to compact
     }
 
-    public function store(CreateClientRequest $request): RedirectResponse
-    {
-        $input = $request->all();
-        $existUser = User::whereEmail($input['email'])->withoutGlobalScope(new TenantScope())->first();
+    // public function store(CreateClientRequest $request): RedirectResponse
+    // {
+    //     $input = $request->all();
+    //     $existUser = User::whereEmail($input['email'])->withoutGlobalScope(new TenantScope())->first();
 
-        if (! empty($existUser)) {
-            $role = $existUser->getRoleNames()->first();
-            $tenantID = getLogInUser()->tenant_id;
-            $clientTenantIds = $existUser->clients()->pluck('tenant_id')->toArray();
+    //     if (! empty($existUser)) {
+    //         $role = $existUser->getRoleNames()->first();
+    //         $tenantID = getLogInUser()->tenant_id;
+    //         $clientTenantIds = $existUser->clients()->pluck('tenant_id')->toArray();
 
-            if (in_array($tenantID, $clientTenantIds) || $role == Role::ROLE_ADMIN) {
-                Flash::error('The email has already been taken.');
+    //         if (in_array($tenantID, $clientTenantIds) || $role == Role::ROLE_ADMIN) {
+    //             Flash::error('The email has already been taken.');
 
-                return redirect()->back();
-            }
-        }
+    //             return redirect()->back();
+    //         }
+    //     }
 
-        $this->clientRepository->store($input, $existUser);
-        Flash::success(__('messages.flash.client_created'));
+    //     $this->clientRepository->store($input, $existUser);
+    //     Flash::success(__('messages.flash.client_created'));
 
-        return redirect()->route('clients.index');
-    }
+    //     return redirect()->route('clients.index');
+    // }
 
     public function show($clientId, Request $request): View|Factory|Application
     {
@@ -97,15 +97,54 @@ class ClientController extends AppBaseController
         return view('clients.edit', compact('client', 'countries', 'clientGroups', 'clientState', 'clientCities','vatNoLabel')); // Added clientGroups to compact
     }
 
-    public function update($clientId, UpdateClientRequest $request): RedirectResponse
-    {
-        $client = Client::withoutGlobalScope(new TenantScope())->whereId($clientId)->first();
-        $input = $request->all();
-        $this->clientRepository->updateClient($input, $client);
-        Flash::success(__('messages.flash.client_updated'));
+   public function store(CreateClientRequest $request): RedirectResponse
+{
+    $input = $request->all();
 
-        return redirect()->route('clients.index');
+    // client_group_id form-ல வந்திருக்கு confirm பண்ணிக்கோ
+    if (!isset($input['client_group_id'])) {
+        Flash::error('Client Group is required.');
+        return redirect()->back();
     }
+
+    $existUser = User::whereEmail($input['email'])->withoutGlobalScope(new TenantScope())->first();
+
+    if (!empty($existUser)) {
+        $role = $existUser->getRoleNames()->first();
+        $tenantID = getLogInUser()->tenant_id;
+        $clientTenantIds = $existUser->clients()->pluck('tenant_id')->toArray();
+
+        if (in_array($tenantID, $clientTenantIds) || $role == Role::ROLE_ADMIN) {
+            Flash::error('The email has already been taken.');
+            return redirect()->back();
+        }
+    }
+
+    // repository வழியாக save
+    $this->clientRepository->store($input, $existUser);
+
+    Flash::success(__('messages.flash.client_created'));
+    return redirect()->route('clients.index');
+}
+
+public function update($clientId, UpdateClientRequest $request): RedirectResponse
+{
+    $client = Client::withoutGlobalScope(new TenantScope())->whereId($clientId)->first();
+    $input = $request->all();
+
+    // client_group_id validation
+    if (!isset($input['client_group_id'])) {
+        Flash::error('Client Group is required.');
+        return redirect()->back();
+    }
+
+    // repository வழியாக update
+    $this->clientRepository->updateClient($input, $client);
+
+    Flash::success(__('messages.flash.client_updated'));
+    return redirect()->route('clients.index');
+}
+
 
     public function destroy($clientId, Request $request): JsonResponse
     {

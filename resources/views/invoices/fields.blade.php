@@ -1,7 +1,16 @@
 <div class="row">
     <div class="col-lg-4 col-sm-12 mb-5">
+        {{ Form::label('client_group_id', __('Client Group') . ':', ['class' => 'form-label required mb-3']) }}
+        {{ Form::select(
+            'client_group_id',
+            $clientGroups ?? [],
+            $client_group_id ?? ($invoice->client->client_group_id ?? null),
+            ['class' => 'form-select io-select2', 'id' => 'client_group_id', 'placeholder' => __('Select Client Group'), 'required', 'data-control' => 'select2']
+        ) }}
+    </div>
+    <div class="col-lg-4 col-sm-12 mb-5">
         {{ Form::label('client_id', __('Client') . ':', ['class' => 'form-label required mb-3']) }}
-        {{ Form::select('client_id', $clients, $client_id ?? null, ['class' => 'form-select io-select2', 'id' => 'client_id', 'placeholder' => __('Select Client'), 'required', 'data-control' => 'select2']) }}
+        {{ Form::select('client_id', $clients ?? [], $client_id ?? null, ['class' => 'form-select io-select2', 'id' => 'client_id', 'placeholder' => __('Select Client'), 'required', 'data-control' => 'select2']) }}
     </div>
     <div class="col-lg-4 col-sm-12 mb-lg-0 mb-5">
         @if (!empty(getSettingValue('invoice_no_prefix')) || !empty(getSettingValue('invoice_no_suffix')))
@@ -14,7 +23,7 @@
                                 {{ getSettingValue('invoice_no_prefix') }}
                             </a>
                         @endif
-                        {{ Form::text('invoice_id', \App\Models\Invoice::generateUniqueInvoiceId(), ['class' => 'form-control', 'required', 'id' => 'invoiceId', 'maxlength' => 6, 'onkeypress' => 'return blockSpecialChar(event)']) }}
+                        {{ Form::text('invoice_id', isset($invoice) ? $invoice->invoice_id : \App\Models\Invoice::generateUniqueInvoiceId(), ['class' => 'form-control', 'required', 'id' => 'invoiceId', 'maxlength' => 6, 'onkeypress' => 'return blockSpecialChar(event)']) }}
                         @if (!empty(getSettingValue('invoice_no_suffix')))
                             <a class="input-group-text bg-secondary border-0 text-decoration-none text-black" data-toggle="tooltip" data-placement="right" title="Invoice No Suffix">
                                 {{ getSettingValue('invoice_no_suffix') }}
@@ -26,7 +35,7 @@
         @else
             <div class="" data-bs-toggle="tooltip" data-bs-trigger="hover" title="" data-bs-original-title="{{ __('Invoice Number') }}">
                 <span class="form-label">{{ __('Invoice') }} #</span>
-                {{ Form::text('invoice_id', \App\Models\Invoice::generateUniqueInvoiceId(), ['class' => 'form-control mt-3', 'required', 'id' => 'invoiceId', 'maxlength' => 6, 'onkeypress' => 'return blockSpecialChar(event)']) }}
+                {{ Form::text('invoice_id', isset($invoice) ? $invoice->invoice_id : \App\Models\Invoice::generateUniqueInvoiceId(), ['class' => 'form-control mt-3', 'required', 'id' => 'invoiceId', 'maxlength' => 6, 'onkeypress' => 'return blockSpecialChar(event)']) }}
             </div>
         @endif
     </div>
@@ -64,6 +73,29 @@
             @endforeach
         </select>
     </div>
+
+    <!-- Added: Client Context (Group + Insurances) -->
+    <div class="col-12">
+        <div id="clientContextSection" class="alert alert-info d-none">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-users fs-2hx text-info me-3"></i>
+                <div class="flex-grow-1">
+                    <h5 class="mb-2">{{ __('Client Group Context') }}</h5>
+                    <div class="mb-2">
+                        <strong>{{ __('Group') }}:</strong>
+                        <span id="clientGroupName">-</span>
+                        <span class="text-muted">(<span id="clientGroupCount">0</span> {{ __('members') }})</span>
+                    </div>
+                    <div>
+                        <strong>{{ __('Group Insurances') }}:</strong>
+                        <div id="clientInsurancesList" class="mt-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end client context -->
+
     <div class="mb-5 col-lg-4 col-sm-12 mt-8">
         <label class="form-check form-switch form-check-custom mt-3">
             <input class="form-check-input recurring-status" type="checkbox" name="recurring_status" id="recurringStatusToggle">
@@ -96,11 +128,9 @@
                 <tr class="tax-tr">
                     <td class="text-center item-number align-center">1</td>
                     <td class="table__item-desc w-25">
+                        <!-- initial options minimal; will be replaced after group select -->
                         <select name="insurance_id[]" class="form-select insurance io-select2" required data-control="select2">
                             <option value="">{{ __('Select Insurance') }}</option>
-                            @foreach ($insurances as $key => $insurance)
-                                <option value="{{ $key }}">{{ $insurance }}</option>
-                            @endforeach
                             <option value="custom">{{ __('Enter Custom Item') }}</option>
                         </select>
                     </td>
