@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Insurance;
 use App\Models\Category;
 use App\Models\Client;
+use App\Models\ClientGroup;
 use App\Models\User;
 use App\Models\TenantWiseClient;
 use Livewire\Component;
@@ -21,6 +22,7 @@ class InsuranceTableSimple extends Component
     public $statusFilter = '';
     public $categoryFilter = '';
     public $clientFilter = '';
+    public $clientGroupFilter = ''; // Added client group filter
     public $policyNumberFilter = '';
     public $startDateFrom = '';
     public $startDateTo = '';
@@ -38,6 +40,7 @@ class InsuranceTableSimple extends Component
         'statusFilter' => ['except' => ''],
         'categoryFilter' => ['except' => ''],
         'clientFilter' => ['except' => ''],
+        'clientGroupFilter' => ['except' => ''], // Added to query string
         'page' => ['except' => 1],
     ];
 
@@ -57,6 +60,11 @@ class InsuranceTableSimple extends Component
     }
 
     public function updatingClientFilter()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingClientGroupFilter() // Added updating method
     {
         $this->resetPage();
     }
@@ -98,10 +106,33 @@ class InsuranceTableSimple extends Component
         }
     }
 
+    public function toggleAdvancedFilters()
+    {
+        $this->showAdvancedFilters = !$this->showAdvancedFilters;
+    }
+
+    public function clearAllFilters()
+    {
+        $this->search = '';
+        $this->statusFilter = '';
+        $this->categoryFilter = '';
+        $this->clientFilter = '';
+        $this->clientGroupFilter = ''; // Added to clear
+        $this->policyNumberFilter = '';
+        $this->startDateFrom = '';
+        $this->startDateTo = '';
+        $this->endDateFrom = '';
+        $this->endDateTo = '';
+        $this->premiumAmountFrom = '';
+        $this->premiumAmountTo = '';
+        $this->resetPage();
+    }
+
 public function getInsurancesProperty()
 {
-    $query = Insurance::with(['client.user', 'category'])
-                     ->where('tenant_id', Auth::user()->tenant_id);
+$query = Insurance::with(['client.user', 'category', 'client.clientGroup'])
+    ->where('insurances.tenant_id', Auth::user()->tenant_id);
+
 
     // Apply search
     if ($this->search) {
@@ -174,16 +205,32 @@ public function getInsurancesProperty()
         $query->where('client_id', $this->clientFilter);
     }
 
+    // Apply client group filter
+    if ($this->clientGroupFilter) {
+        $query->whereHas('client', function ($q) {
+            $q->where('client_group_id', $this->clientGroupFilter);
+        });
+    }
+
     // Apply sorting
     if ($this->sortField === 'client_name') {
         $query->join('clients', 'insurances.client_id', '=', 'clients.id')
               ->orderBy('clients.first_name', $this->sortDirection)
               ->select('insurances.*');
-    } elseif ($this->sortField === 'category_name') {
+    }
+     elseif ($this->sortField === 'category_name') {
         $query->join('categories', 'insurances.category_id', '=', 'categories.id')
               ->orderBy('categories.name', $this->sortDirection)
               ->select('insurances.*');
-    } else {
+    }elseif ($this->sortField === 'client_group_name') {
+    $query->join('clients', 'insurances.client_id', '=', 'clients.id')
+      ->join('client_groups', 'clients.client_group_id', '=', 'client_groups.id')
+      ->where('insurances.tenant_id', Auth::user()->tenant_id)
+      ->orderBy('client_groups.name', $this->sortDirection)
+      ->select('insurances.*');
+
+}
+     else {
         $query->orderBy($this->sortField, $this->sortDirection);
     }
 
@@ -195,6 +242,13 @@ public function getInsurancesProperty()
         return Category::where('tenant_id', Auth::user()->tenant_id)
                       ->orderBy('name')
                       ->get();
+    }
+
+    public function getClientGroupsProperty() // Added property for client groups
+    {
+        return ClientGroup::where('tenant_id', Auth::user()->tenant_id)
+                          ->orderBy('name')
+                          ->get();
     }
 
     public function getClientsProperty()
@@ -230,6 +284,7 @@ public function getInsurancesProperty()
         return view('livewire.insurance-table-simple', [
             'insurances' => $this->insurances,
             'categories' => $this->categories,
+            'clientGroups' => $this->clientGroups, // Added to pass to view
             'clients' => $this->clients,
         ]);
     }

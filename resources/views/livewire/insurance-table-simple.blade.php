@@ -38,7 +38,16 @@
             </select>
         </div>
         
-        <div class="col-md-3 mb-3">
+        <div class="col-md-2 mb-3"> <!-- Added client group filter select -->
+            <select wire:model.live="clientGroupFilter" class="form-select">
+                <option value="">All Client Groups</option>
+                @foreach($clientGroups as $group)
+                    <option value="{{ $group->id }}">{{ $group->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        
+        <div class="col-md-2 mb-3">
             <select wire:model.live="clientFilter" class="form-select">
                 <option value="">All Clients</option>
                 @foreach($clients as $client)
@@ -47,7 +56,7 @@
             </select>
         </div>
         
-        <div class="col-md-2 mb-3">
+        <div class="col-md-1 mb-3">
             <select wire:model.live="perPage" class="form-select">
                 <option value="10">10 per page</option>
                 <option value="25">25 per page</option>
@@ -67,7 +76,7 @@
                 {{ $showAdvancedFilters ? 'Hide' : 'Show' }} Advanced Filters
             </button>
             
-            @if($search || $statusFilter || $categoryFilter || $clientFilter || $policyNumberFilter || $startDateFrom || $startDateTo || $endDateFrom || $endDateTo || $premiumAmountFrom || $premiumAmountTo)
+            @if($search || $statusFilter || $categoryFilter || $clientFilter || $clientGroupFilter || $policyNumberFilter || $startDateFrom || $startDateTo || $endDateFrom || $endDateTo || $premiumAmountFrom || $premiumAmountTo) <!-- Added clientGroupFilter to condition -->
                 <button type="button" 
                         class="btn btn-outline-danger btn-sm" 
                         wire:click="clearAllFilters">
@@ -193,6 +202,18 @@
                         </button>
                     </th>
                     <th>
+    <button class="btn btn-link text-black p-0 text-decoration-none" 
+            wire:click="sortBy('client_group_name')">
+        Client Group
+        @if($sortField === 'client_group_name')
+            <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
+        @else
+            <i class="fas fa-sort text-muted"></i>
+        @endif
+    </button>
+</th>
+
+                    <th>
                         <button class="btn btn-link text-black p-0 text-decoration-none" 
                                 wire:click="sortBy('category_name')">
                             Category
@@ -274,6 +295,14 @@
                                 <span class="text-muted">N/A</span>
                             @endif
                         </td>
+                        <td>
+    @if($insurance->client && $insurance->client->clientGroup)
+        <span class="badge bg-info">{{ $insurance->client->clientGroup->name }}</span>
+    @else
+        <span class="text-muted">N/A</span>
+    @endif
+</td>
+
                         <td>
                             @if($insurance->category)
                                 <span class="badge bg-secondary">{{ $insurance->category->name }}</span>

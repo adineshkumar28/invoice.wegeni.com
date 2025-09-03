@@ -7,10 +7,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
-use PowerComponents\LivewirePowerGrid\PowerGrid;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use Carbon\Carbon;
+use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
 
 final class InsuranceTable extends PowerGridComponent
 {
@@ -205,3 +205,4 @@ final class InsuranceTable extends PowerGridComponent
         }
     }
 }
+    

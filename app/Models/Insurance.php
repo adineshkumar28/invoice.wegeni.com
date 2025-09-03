@@ -90,4 +90,13 @@ class Insurance extends Model
     {
         return $query->where('end_date', '<', Carbon::now());
     }
+// In Insurance.php
+
+
+public function clientGroup()
+{
+    return $this->hasOneThrough(ClientGroup::class, Client::class, 'id', 'id', 'client_id', 'client_group_id');
+}
+
+
 }
