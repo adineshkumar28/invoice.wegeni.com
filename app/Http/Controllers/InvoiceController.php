@@ -184,35 +184,36 @@ class InvoiceController extends AppBaseController
         
         return view('invoices.edit')->with($data);
     }
+public function update(UpdateInvoiceRequest $request, Invoice $invoice)
+{
+    try {
+        setlocale(LC_NUMERIC, 'C');
+        DB::beginTransaction();
 
-    public function update(UpdateInvoiceRequest $request, Invoice $invoice): JsonResponse
-    {
-        try {
-            setlocale(LC_NUMERIC, 'C');
-            
-            DB::beginTransaction();
-            
-            $input = $this->prepareInvoiceData($request->validated());
-            $invoice = $this->invoiceRepository->updateInvoice($invoice->id, $input);
-            
-            DB::commit();
-            
-            if ($input['status'] == 1) {
-                return $this->sendResponse($invoice, __('Invoice updated and sent successfully.'));
-            }
-            
-            return $this->sendResponse($invoice, __('Invoice updated successfully.'));
-            
-        } catch (Exception $e) {
-            DB::rollBack();
-            Log::error('Invoice update failed', [
-                'error' => $e->getMessage(),
-                'invoice_id' => $invoice->id
-            ]);
-            
-            return $this->sendError($e->getMessage());
+        $input = $this->prepareInvoiceData($request->validated());
+        $this->invoiceRepository->updateInvoice($invoice->id, $input);
+
+        DB::commit();
+
+        if ($input['status'] == 1) {
+            return redirect()->route('invoices.index')
+                ->with('success', 'Invoice updated and sent successfully.');
         }
+
+        return redirect()->route('invoices.index')
+            ->with('success', 'Invoice updated successfully.');
+
+    } catch (Exception $e) {
+        DB::rollBack();
+        Log::error('Invoice update failed', [
+            'error' => $e->getMessage(),
+            'invoice_id' => $invoice->id
+        ]);
+
+        return redirect()->back()->with('error', $e->getMessage());
     }
+}
+
 
     public function destroy(Invoice $invoice): JsonResponse
     {
