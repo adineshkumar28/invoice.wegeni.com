@@ -153,7 +153,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'first_name' => 'required|max:191',
         'last_name' => 'required|max:191',
         'email' => 'nullable|email|unique:users,email|regex:/^[\w\-\.\+]+\@[a-zA-Z0-9\.\-]+\.[a-zA-z0-9]{2,4}$/',
-        'contact' => 'required|is_unique:users,contact',
+        // 'contact' => 'required|is_unique:users,contact',
+        'contact' => 'nullable|string|max:15', // Changed to nullable, removed is_unique
         'password_confirmation' => 'required',
         'password' => 'required|same:password_confirmation|min:6',
     ];
